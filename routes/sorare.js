@@ -126,8 +126,8 @@ router.get('/getAllPlayers', async (req, res) => {
   }
 });
 
-// Définition de la route "/getAllSorareStep2" avec une fonction asynchrone qui gère la requête et la réponse
-router.get("/getAllSorareStep2", async (req, res) => {
+// Définition de la route "/getAllPlayersgetAllPlayersStep2" avec une fonction asynchrone qui gère la requête et la réponse
+router.get("/getAllPlayersStep2", async (req, res) => {
   // Lecture du contenu du fichier "players.json" de manière synchrone
   const fileRead = fs.readFileSync(__dirname + '/../players.json', 'utf8');
 
@@ -166,7 +166,7 @@ router.get("/getAllSorareStep2", async (req, res) => {
   });
 
   // Enregistrement de la réponse dans un fichier JSON
-  fs.writeFileSync(__dirname + '/../playersUnique.json', JSON.stringify(responseInitial));
+  fs.writeFileSync(__dirname + '/../playersUniqueFormated.json', JSON.stringify(responseInitial));
 
   // Renvoi des objets uniques en tant que réponse à la requête
   res.send(objetsUniques);
