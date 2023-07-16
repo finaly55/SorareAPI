@@ -126,9 +126,13 @@ router.get('/getAllPlayers', async (req, res) => {
   }
 });
 
+// Définition de la route "/getAllSorareStep2" avec une fonction asynchrone qui gère la requête et la réponse
 router.get("/getAllSorareStep2", async (req, res) => {
+  // Lecture du contenu du fichier "players.json" de manière synchrone
   const fileRead = fs.readFileSync(__dirname + '/../players.json', 'utf8');
-  responseInitial = JSON.parse(fileRead).data.football.allCards.nodes;
+
+  // Analyse du contenu JSON et extraction de la propriété "data.football.allCards.nodes"
+  const responseInitial = JSON.parse(fileRead).data.football.allCards.nodes;
 
   // Tableau pour stocker les objets uniques
   const objetsUniques = [];
@@ -138,11 +142,15 @@ router.get("/getAllSorareStep2", async (req, res) => {
 
   // Parcours du tableau d'objets
   responseInitial.forEach(objet => {
+    // Extraction des propriétés player, so5Scores et position de l'objet en utilisant la déstructuration
     const { player, so5Scores, position } = objet;
 
+    // Vérification si le displayName du joueur n'est pas déjà présent dans la map displayNameMap
     if (!displayNameMap.has(player.displayName)) {
+      // Ajout du displayName du joueur à la map displayNameMap pour indiquer qu'il a été rencontré
       displayNameMap.set(player.displayName, true);
 
+      // Création d'un nouvel objet contenant les propriétés souhaitées
       let newObject = {
         playerDisplayName: player.displayName,
         clubName: player.activeClub?.name,
@@ -150,15 +158,18 @@ router.get("/getAllSorareStep2", async (req, res) => {
         photo: player.pictureUrl,
         scores: so5Scores.map(entry => entry.score).join(', '),
         position: position
-      }
-      objetsUniques.push(newObject)
+      };
+
+      // Ajout du nouvel objet au tableau objetsUniques
+      objetsUniques.push(newObject);
     }
   });
 
-  // Enregistrer la réponse dans un fichier JSON
+  // Enregistrement de la réponse dans un fichier JSON
   fs.writeFileSync(__dirname + '/../playersUnique.json', JSON.stringify(responseInitial));
-  res.send(objetsUniques)
-})
 
+  // Renvoi des objets uniques en tant que réponse à la requête
+  res.send(objetsUniques);
+});
 
 module.exports = router;
