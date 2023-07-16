@@ -126,52 +126,37 @@ router.get('/getAllPlayers', async (req, res) => {
   }
 });
 
-router.get("/getAllSorarePlayers", async (req, res) => {
+router.get("/getAllSorareStep2", async (req, res) => {
   const fileRead = fs.readFileSync(__dirname + '/../players.json', 'utf8');
   responseInitial = JSON.parse(fileRead).data.football.allCards.nodes;
+
+  // Tableau pour stocker les objets uniques
+  const objetsUniques = [];
 
   // Map pour stocker les displayName déjà rencontrés
   const displayNameMap = new Map();
 
-  // Tableau pour stocker les objets uniques
-  const objetsUniques = [];
-
-
   // Parcours du tableau d'objets
   responseInitial.forEach(objet => {
-    const { player } = objet;
-    const { displayName } = player;
-    
-    // Si le displayName n'a pas encore été rencontré, on l'ajoute au tableau des objets uniques
-    if (!displayNameMap.has(displayName)) {
-      displayNameMap.set(displayName, true);
-      objetsUniques.push(objet);
+    const { player, so5Scores, position } = objet;
+
+    if (!displayNameMap.has(player.displayName)) {
+      displayNameMap.set(player.displayName, true);
+
+      let newObject = {
+        playerDisplayName: player.displayName,
+        clubName: player.activeClub?.name,
+        leagueName: player.activeClub?.domesticLeague?.displayName,
+        photo: player.pictureUrl,
+        scores: so5Scores.map(entry => entry.score).join(', '),
+        position: position
+      }
+      objetsUniques.push(newObject)
     }
   });
-  console.log(objetsUniques.length)
-  res.send(objetsUniques)
-})
 
-router.get("/getAllSorarePlayersFormated", async (req, res) => {
-  const fileRead = fs.readFileSync(__dirname + '/../playersUnique.json', 'utf8');
-  responseInitial = JSON.parse(fileRead);
-
-  // Tableau pour stocker les objets uniques
-  const objetsUniques = [];
-
-  // Parcours du tableau d'objets
-  responseInitial.forEach(objet => {
-    const { player } = objet;
-
-    let newObject = {
-      playerDisplayName: player.displayName,
-      clubName: player.activeClub?.name,
-      leagueName: player.activeClub?.domesticLeague?.displayName,
-      photo: player.pictureUrl,
-      scores: objet.so5Scores.map(entry => entry.score).join(', '),
-    }
-    objetsUniques.push(newObject)
-  });
+  // Enregistrer la réponse dans un fichier JSON
+  fs.writeFileSync(__dirname + '/../playersUnique.json', JSON.stringify(responseInitial));
   res.send(objetsUniques)
 })
 
