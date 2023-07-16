@@ -3,7 +3,6 @@ const moment = require('moment/moment');
 const { postRequest } = require("../api")
 moment.locale('fr')
 const fs = require('fs');
-const path = require('path');
 
 const router = express.Router();
 /**
@@ -12,7 +11,6 @@ const router = express.Router();
 router.get('/getAllPlayers', async (req, res) => {
   let responseInitial = {};
   let responseNext = {};
-  let retryCount = 0;
 
   try {
     const requestBody = {
@@ -23,7 +21,6 @@ router.get('/getAllPlayers', async (req, res) => {
                 nodes {
                     position
                     player {
-                        id
                         displayName
                         activeClub {
                             name
@@ -32,9 +29,7 @@ router.get('/getAllPlayers', async (req, res) => {
                             }
                         }
                         pictureUrl
-                        slug
                     }
-                    name
                     so5Scores(last: 30) {
                         score
                     }
@@ -70,9 +65,7 @@ router.get('/getAllPlayers', async (req, res) => {
                 after: "${responseInitial.data.football.allCards.pageInfo.endCursor}"
                 ) {
                   nodes {
-                      position
                       player {
-                          id
                           displayName
                           activeClub {
                               name
@@ -81,12 +74,11 @@ router.get('/getAllPlayers', async (req, res) => {
                               }
                           }
                           pictureUrl
-                          slug
                       }
-                      name
                       so5Scores(last: 30) {
                           score
                       }
+                      position
                   }
                   pageInfo {
                       endCursor
@@ -108,13 +100,7 @@ router.get('/getAllPlayers', async (req, res) => {
         );
         responseInitial.data.football.allCards.pageInfo =
           responseNext.data.football.allCards.pageInfo;
-
-        if (count % 300 === 0) {
-          // Ajouter un délai de 10 seconde toutes les 300 requêtes
-          await new Promise(resolve => setTimeout(resolve, 10000));
-        }
       }
-
     }
 
     // Enregistrer la réponse dans un fichier
@@ -128,14 +114,6 @@ router.get('/getAllPlayers', async (req, res) => {
   }
 
 });
-
-router.get("/getAllSorareDataPlayers", async (req, res) => {
-  const fileRead = fs.readFileSync(__dirname + '/../allPlayersSoRareData.json', 'utf8');
-  responseInitial = JSON.parse(fileRead);
-
-  console.log(responseInitial.data.football.allCards.nodes.length)
-  res.send(responseInitial)
-})
 
 router.get("/getAllSorarePlayers", async (req, res) => {
   const fileRead = fs.readFileSync(__dirname + '/../players.json', 'utf8');
@@ -163,82 +141,28 @@ router.get("/getAllSorarePlayers", async (req, res) => {
   res.send(objetsUniques)
 })
 
+router.get("/getAllSorarePlayersFormated", async (req, res) => {
+  const fileRead = fs.readFileSync(__dirname + '/../playersUnique.json', 'utf8');
+  responseInitial = JSON.parse(fileRead);
 
-router.get('/compressAllPlayers', async (req, res) => {
-  function mergeAuctionsData(folderPath, callback) {
-    // Tableau pour stocker les données fusionnées
-    const mergedAuctions = [];
+  // Tableau pour stocker les objets uniques
+  const objetsUniques = [];
 
-    // Récupérer la liste des fichiers dans le dossier
-    fs.readdir(folderPath, (err, files) => {
-      if (err) {
-        console.error('Erreur lors de la lecture du dossier :', err);
-        callback(err, null);
-        return;
-      }
+  // Parcours du tableau d'objets
+  responseInitial.forEach(objet => {
+    const { player } = objet;
 
-      let processedFiles = 0;
-
-      // Parcourir chaque fichier du dossier
-      files.forEach((file) => {
-        const filePath = path.join(folderPath, file);
-
-        // Ignorer les dossiers
-        if (fs.lstatSync(filePath).isDirectory()) {
-          console.log(`Ignorer le dossier : ${filePath}`);
-          return;
-        }
-
-        // Lire le contenu du fichier
-        fs.readFile(filePath, 'utf8', (err, data) => {
-          if (err) {
-            console.error(`Erreur lors de la lecture du fichier ${filePath} :`, err);
-            callback(err, null);
-            return;
-          }
-
-          try {
-            // Parser les données JSON
-            const fileData = JSON.parse(data);
-
-            // Vérifier si le fichier contient la propriété "auctions"
-            if (fileData.hasOwnProperty('auctions') && Array.isArray(fileData.auctions)) {
-              // Ajouter les éléments de "auctions" au tableau fusionné
-              mergedAuctions.push(...fileData.auctions);
-            }
-          } catch (error) {
-            console.error(`Erreur lors du traitement du fichier ${filePath} :`, error);
-          }
-
-          // Afficher le nom du fichier en cours de traitement
-          console.log(`Traitement du fichier : ${filePath}`);
-
-          // Incrémenter le compteur des fichiers traités
-          processedFiles++;
-
-          // Vérifier si tous les fichiers ont été traités
-          if (processedFiles === files.length) {
-            // Renvoyer le tableau fusionné via le callback
-            callback(null, mergedAuctions);
-          }
-        });
-      });
-    });
-  }
-
-  // Exemple d'utilisation de la fonction
-  const folderPath = './allPlayersFiles';
-
-  mergeAuctionsData(folderPath, (err, mergedAuctions) => {
-    if (err) {
-      console.error('Erreur lors de la fusion des données :', err);
-      return;
+    let newObject = {
+      playerDisplayName: player.displayName,
+      clubName: player.activeClub?.name,
+      leagueName: player.activeClub?.domesticLeague?.displayName,
+      photo: player.pictureUrl,
+      scores: objet.so5Scores.map(entry => entry.score).join(', '),
     }
-
-    console.log('Fusion des données terminée.');
-    console.log('Données fusionnées :', mergedAuctions);
-    res.send(mergedAuctions)
+    objetsUniques.push(newObject)
   });
+  res.send(objetsUniques)
 })
+
 
 module.exports = router;
