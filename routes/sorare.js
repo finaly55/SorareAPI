@@ -20,20 +20,23 @@ router.get('/getAllPlayers', async (req, res) => {
         football {
             allCards(rarities: [unique]) {
                 nodes {
-                    position
                     player {
                         displayName
+                        age
                         activeClub {
                             name
                             domesticLeague {
                                 displayName
                             }
                         }
-                        pictureUrl
+                             gameStats(last: 10){
+                            gameStarted
+                                      }
                     }
                     so5Scores(last: 30) {
-                        score
-                    }
+                      score
+                                    }
+                    position
                 }
                 pageInfo {
                     endCursor
@@ -54,7 +57,7 @@ router.get('/getAllPlayers', async (req, res) => {
     responseInitial = await postRequest('/federation/graphql', requestBody);
     let count = 0;
 
-    // Boucler tant qu'il y a des pages suivantes à récupérer
+     //Boucler tant qu'il y a des pages suivantes à récupérer
     while (
       responseInitial.data.football && responseInitial.data.football.allCards.pageInfo.hasNextPage
     ) {
@@ -71,20 +74,25 @@ router.get('/getAllPlayers', async (req, res) => {
                 after: "${responseInitial.data.football.allCards.pageInfo.endCursor}"
                 ) {
                   nodes {
+                      position
                       player {
                           displayName
+                          gameStats(last: 10){
+                            gameStarted
+                          }
+                          age
                           activeClub {
                               name
                               domesticLeague {
                                   displayName
                               }
                           }
-                          pictureUrl
+                          
                       }
                       so5Scores(last: 30) {
                           score
                       }
-                      position
+                      
                   }
                   pageInfo {
                       endCursor
@@ -143,7 +151,7 @@ router.get("/getAllPlayersStep2", async (req, res) => {
   // Parcours du tableau d'objets
   responseInitial.forEach(objet => {
     // Extraction des propriétés player, so5Scores et position de l'objet en utilisant la déstructuration
-    const { player, so5Scores, position } = objet;
+    const { player, so5Scores, position, } = objet;
 
     // Vérification si le displayName du joueur n'est pas déjà présent dans la map displayNameMap
     if (!displayNameMap.has(player.displayName)) {
@@ -153,11 +161,13 @@ router.get("/getAllPlayersStep2", async (req, res) => {
       // Création d'un nouvel objet contenant les propriétés souhaitées
       let newObject = {
         playerDisplayName: player.displayName,
+        gameStarted: player.gameStats?.map(entry => entry.gameStarted).join(', '),
         clubName: player.activeClub?.name,
         leagueName: player.activeClub?.domesticLeague?.displayName,
-        photo: player.pictureUrl,
-        scores: so5Scores.map(entry => entry.score).join(', '),
-        position: position
+        age: player.age,  
+        scores: so5Scores.map(entry => entry.score).join(','),
+        position: position,
+              
       };
 
       // Ajout du nouvel objet au tableau objetsUniques
