@@ -176,7 +176,7 @@ router.get("/getAllPlayersStep2", async (req, res) => {
   });
 
   // Enregistrement de la réponse dans un fichier JSON
-  fs.writeFileSync(__dirname + '/../playersUniqueFormated.json', JSON.stringify(responseInitial));
+  fs.writeFileSync(__dirname + '/../playersUniqueFormated.json', JSON.stringify(objetsUniques));
 
   // Renvoi des objets uniques en tant que réponse à la requête
   res.send(objetsUniques);
